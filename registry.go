@@ -66,22 +66,23 @@ func (r *StandardRegistry) Get(name string) interface{} {
 	return r.metrics[name]
 }
 
-// Output the value of all registered metrics in JSON format
-func (r *StandardRegistry) GetAllJson() ([]byte, error) {
+// Output the value of all registered metrics
+func (r *StandardRegistry) serializeRegistry() map[string]interface{} {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	data := make(map[string]map[string]interface{})
+	data := make(map[string]interface{})
 	r.Each(func(name string, i interface{}) {
 		values := make(map[string]interface{})
 		switch metric := i.(type) {
 		case Counter:
-			values["count"] = metric.Count()
+			data[name] = metric.Count()
 		case Meter:
 			m := metric.Snapshot()
 			values["count"] = m.Count()
 			values["mean"] = m.RateMean()
 			values["lastValue"] = m.LastValue()
+			data[name] = values
 		case Timer:
 			t := metric
 			values["count"] = t.Count()
@@ -90,6 +91,7 @@ func (r *StandardRegistry) GetAllJson() ([]byte, error) {
 			values["mean"] = t.Mean()
 			values["lastValue"] = t.LastValue()
 			values["executions"] = t.AllExecutions()
+			data[name] = values
 		case Histogram:
 			h := metric
 			ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
@@ -103,11 +105,21 @@ func (r *StandardRegistry) GetAllJson() ([]byte, error) {
 			values["95%"] = ps[2]
 			values["99%"] = ps[3]
 			values["99.9%"] = ps[4]
+			data[name] = values
 		case Text:
-			values["msg"] = metric.Text()
+			data[name] = metric.Text()
+		case Registry:
+			nestedReg := metric.(*StandardRegistry)
+			data[name] = nestedReg.serializeRegistry()
 		}
-		data[name] = values
 	})
+	return data
+}
+
+// Output the value of all registered metrics in JSON format
+func (r *StandardRegistry) GetAllJson() ([]byte, error) {
+	data := r.serializeRegistry()
+
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -145,7 +157,7 @@ func (r *StandardRegistry) register(name string, i interface{}) error {
 		return DuplicateMetric(name)
 	}
 	switch i.(type) {
-	case Counter, Text, Meter, Timer, Histogram:
+	case Counter, Text, Meter, Timer, Histogram, Registry:
 		r.metrics[name] = i
 	}
 	return nil

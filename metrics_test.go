@@ -1,3 +1,4 @@
+// nolint
 package metrics
 
 import (
@@ -34,10 +35,15 @@ func Example() {
 	q1.Stop()
 	q1.Time(func() { time.Sleep(time.Second * 4) })
 
+	nestedRegistry := NewRegistry()
+	NewRegisteredText("msg", nestedRegistry).Set("This is a nested registry")
+	NewRegisteredCounter("count", nestedRegistry).Inc(1996)
+	registry.Register("registry2", nestedRegistry)
+
 	js, err := registry.GetAllJson()
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(string(js))
-	// Output: {"bar":{"count":83},"foo":{"count":9},"golang":{"count":2,"executions":[1,4],"lastValue":4,"max":4,"mean":2.5,"min":1},"hello":{"msg":"Error: did not hello world"},"world":{"count":2,"lastValue":100,"mean":75}}
+	// Output: {"bar":83,"foo":9,"golang":{"count":2,"executions":[1,4],"lastValue":4,"max":4,"mean":2.5,"min":1},"hello":"Error: did not hello world","registry2":{"count":1996,"msg":"This is a nested registry"},"world":{"count":2,"lastValue":100,"mean":75}}
 }
