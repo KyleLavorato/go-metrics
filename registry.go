@@ -15,7 +15,7 @@ var DefaultRegistry Registry = NewRegistry()
 type DuplicateMetric string
 
 func (err DuplicateMetric) Error() string {
-	return fmt.Sprintf("duplicate metric: %s", string(err))
+	return fmt.Sprintf("duplicate metric: %s\n", string(err))
 }
 
 // The standard implementation of a Registry is a mutex-protected map
