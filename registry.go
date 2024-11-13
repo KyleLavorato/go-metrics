@@ -108,6 +108,13 @@ func (r *StandardRegistry) serializeRegistry() map[string]interface{} {
 			data[name] = values
 		case Text:
 			data[name] = metric.Text()
+		case Slice:
+			slices := []interface{}{}
+			for _, r := range metric.GetAll() {
+				nestedReg := r.(*StandardRegistry)
+				slices = append(slices, nestedReg.serializeRegistry())
+			}
+			data[name] = slices
 		case Registry:
 			nestedReg := metric.(*StandardRegistry)
 			data[name] = nestedReg.serializeRegistry()
@@ -157,7 +164,7 @@ func (r *StandardRegistry) register(name string, i interface{}) error {
 		return DuplicateMetric(name)
 	}
 	switch i.(type) {
-	case Counter, Text, Meter, Timer, Histogram, Registry:
+	case Counter, Text, Meter, Timer, Histogram, Registry, Slice:
 		r.metrics[name] = i
 	}
 	return nil
