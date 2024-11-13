@@ -2,9 +2,21 @@
 package metrics
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
+
+type NestedData struct {
+	ValueOne int
+	ValueTwo int
+}
+
+type ExistingJson struct {
+	Sample NestedData
+	Data   NestedData
+	Value  int
+}
 
 func Example() {
 	registry := NewRegistry()
@@ -49,10 +61,24 @@ func Example() {
 	}
 	registry.Register("sliceReg", s)
 
+	data := ExistingJson{
+		Sample: NestedData{
+			ValueOne: 1,
+			ValueTwo: 2,
+		},
+		Data: NestedData{
+			ValueOne: 3,
+			ValueTwo: 4,
+		},
+		Value: 5,
+	}
+	raw, _ := json.Marshal(&data)
+	NewRegisteredJson("ExistingJson", registry).Set(raw)
+
 	js, err := registry.GetAllJson()
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(string(js))
-	// Output: {"bar":83,"foo":9,"golang":{"count":2,"executions":[1,4],"lastValue":4,"max":4,"mean":2.5,"min":1},"hello":"Error: did not hello world","registry2":{"count":1996,"msg":"This is a nested registry"},"sliceReg":[{"count":0,"msg":"This is a slice entry"},{"count":1,"msg":"This is a slice entry"},{"count":2,"msg":"This is a slice entry"},{"count":3,"msg":"This is a slice entry"},{"count":4,"msg":"This is a slice entry"}],"world":{"count":2,"lastValue":100,"mean":75}}
+	// Output: {"ExistingJson":{"Sample":{"ValueOne":1,"ValueTwo":2},"Data":{"ValueOne":3,"ValueTwo":4},"Value":5},"bar":83,"foo":9,"golang":{"count":2,"executions":[1,4],"lastValue":4,"max":4,"mean":2.5,"min":1},"hello":"Error: did not hello world","registry2":{"count":1996,"msg":"This is a nested registry"},"sliceReg":[{"count":0,"msg":"This is a slice entry"},{"count":1,"msg":"This is a slice entry"},{"count":2,"msg":"This is a slice entry"},{"count":3,"msg":"This is a slice entry"},{"count":4,"msg":"This is a slice entry"}],"world":{"count":2,"lastValue":100,"mean":75}}
 }

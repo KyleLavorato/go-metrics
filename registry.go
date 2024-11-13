@@ -115,6 +115,8 @@ func (r *StandardRegistry) serializeRegistry() map[string]interface{} {
 				slices = append(slices, nestedReg.serializeRegistry())
 			}
 			data[name] = slices
+		case Json:
+			data[name] = metric.Json()
 		case Registry:
 			nestedReg := metric.(*StandardRegistry)
 			data[name] = nestedReg.serializeRegistry()
@@ -164,7 +166,7 @@ func (r *StandardRegistry) register(name string, i interface{}) error {
 		return DuplicateMetric(name)
 	}
 	switch i.(type) {
-	case Counter, Text, Meter, Timer, Histogram, Registry, Slice:
+	case Counter, Text, Meter, Timer, Histogram, Registry, Slice, Json:
 		r.metrics[name] = i
 	}
 	return nil
