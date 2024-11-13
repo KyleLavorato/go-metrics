@@ -11,6 +11,7 @@ type Counter interface {
 	Count() int64
 	Dec(int64)
 	Inc(int64)
+	Set(int64)
 }
 
 // NewCounter constructs a new StandardCounter.
@@ -63,4 +64,9 @@ func (c *StandardCounter) Dec(i int64) {
 // Inc increments the counter by the given amount.
 func (c *StandardCounter) Inc(i int64) {
 	atomic.AddInt64(&c.count, i)
+}
+
+// Set changes the counter to the given value.
+func (c *StandardCounter) Set(i int64) {
+	atomic.StoreInt64(&c.count, i)
 }
